@@ -67,12 +67,10 @@
     </style>
 </head>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
 <div class="container">
     <h1>A/B Test Calculator</h1>
     <form id="abTestForm">
-        <label for="dataType">Please choose between discrete (100) or continuous (0.1):</label>
+        <label for="dataType">Please choose between discrete (1000) or continuous (0.5):</label>
         <select id="dataType" required onchange="togglePopulationSize()">
             <option value="discrete">Discrete</option>
             <option value="continuous">Continuous</option>
@@ -93,7 +91,7 @@
         <label for="dailyTraffic">Daily Traffic:</label>
         <input type="number" id="dailyTraffic" placeholder="e.g., 100">
 
-        <label for="populationSize">Population Size <span class="default-note">(Default is 10000 for discrete)</span>:</label>
+        <label for="populationSize">Population Size (required for Discrete) <span class="default-note">(Default is 10000 for discrete)</span>:</label>
         <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
 
         <button type="button" onclick="calculateABTest()">Calculate</button>
