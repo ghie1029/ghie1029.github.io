@@ -245,53 +245,58 @@ function togglePopulationSize() {
     }
 
 
-    // Calculate P-Value for A/B Test
-    function calculatePValue() {
-        const visitsControl = parseInt(document.getElementById('visitsControl').value);
-        const conversionsControl = parseInt(document.getElementById('conversionsControl').value);
-        const visitsExperimental = parseInt(document.getElementById('visitsExperimental').value);
-        const conversionsExperimental = parseInt(document.getElementById('conversionsExperimental').value);
+   // Calculate P-Value for A/B Test
+function calculatePValue() {
+    const visitsControl = parseInt(document.getElementById('visitsControl').value);
+    const conversionsControl = parseInt(document.getElementById('conversionsControl').value);
+    const visitsExperimental = parseInt(document.getElementById('visitsExperimental').value);
+    const conversionsExperimental = parseInt(document.getElementById('conversionsExperimental').value);
 
-        if (isNaN(visitsControl) || isNaN(conversionsControl) || isNaN(visitsExperimental) || isNaN(conversionsExperimental)) {
-            alert('Please fill out all required fields correctly.');
-            return;
-        }
-
-        const pControl = conversionsControl / visitsControl;
-        const pExperimental = conversionsExperimental / visitsExperimental;
-
-        const pooledP = (conversionsControl + conversionsExperimental) / (visitsControl + visitsExperimental);
-
-        const standardError = Math.sqrt(pooledP * (1 - pooledP) * (1 / visitsControl + 1 / visitsExperimental));
-
-        const zScore = (pExperimental - pControl) / standardError;
-
-        const pValue = 2 * (1 - cumulativeNormal(zScore));
-
-        let recommendation = '';
-        if (pValue < 0.05) {
-            recommendation = 'Reject the null hypothesis: The difference is statistically significant.';
-        } else if (pValue >= 0.05 && pValue <= 0.10) {
-            recommendation = 'The result is inconclusive.';
-        } else {
-            recommendation = 'Do not reject the null hypothesis: No significant difference.';
-        }
-
-        document.getElementById('pValueResult').style.display = 'block';
-        document.getElementById('pValueResult').innerHTML = `
-            <p><strong>P-Value:</strong> ${pValue.toFixed(4)}</p>
-            <p><strong>Recommendation:</strong> ${recommendation}</p>
-        `;
+    if (isNaN(visitsControl) || isNaN(conversionsControl) || isNaN(visitsExperimental) || isNaN(conversionsExperimental)) {
+        alert('Please fill out all required fields correctly.');
+        return;
     }
 
-    // Cumulative normal function for zScore to calculate p-value
-    function cumulativeNormal(z) {
-        const t = 1 / (1 + 0.2316419 * Math.abs(z));
-        const d = 0.3989422804014337 * Math.exp(-z * z / 2);
-        const p = d * t * (1.330274429 + t * (-1.821255978 + t * (1.781477937 + t * (-0.356563782 + t * 0.319381530))));
+    // Conversion rates for control and experimental groups
+    const pControl = conversionsControl / visitsControl;
+    const pExperimental = conversionsExperimental / visitsExperimental;
 
-        return z >= 0 ? 1 - p : p;
+    // Pooled conversion rate
+    const pooledP = (conversionsControl + conversionsExperimental) / (visitsControl + visitsExperimental);
+
+    // Standard error of the difference between the two proportions
+    const standardError = Math.sqrt(pooledP * (1 - pooledP) * (1 / visitsControl + 1 / visitsExperimental));
+
+    // Z-score calculation
+    const zScore = (pExperimental - pControl) / standardError;
+
+    // p-value calculation (two-tailed test)
+    const pValue = 2 * (1 - cumulativeNormal(Math.abs(zScore)));  // Absolute value of z-score for two-tailed test
+
+    let recommendation = '';
+    if (pValue < 0.05) {
+        recommendation = 'Reject the null hypothesis: The difference is statistically significant.';
+    } else if (pValue >= 0.05 && pValue <= 0.10) {
+        recommendation = 'The result is inconclusive.';
+    } else {
+        recommendation = 'Do not reject the null hypothesis: No significant difference.';
     }
+
+    document.getElementById('pValueResult').style.display = 'block';
+    document.getElementById('pValueResult').innerHTML = `
+        <p><strong>P-Value:</strong> ${pValue.toFixed(4)}</p>
+        <p><strong>Recommendation:</strong> ${recommendation}</p>
+    `;
+}
+
+// Cumulative normal function for zScore to calculate p-value
+function cumulativeNormal(z) {
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989422804014337 * Math.exp(-0.5 * z * z);
+    const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    return z >= 0 ? 1 - p : p;
+}
+
 </script>
 </body>
 </html>
