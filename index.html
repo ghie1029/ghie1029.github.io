@@ -29,7 +29,7 @@
             margin: 15px 0 5px;
             font-weight: bold;
         }
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -62,23 +62,23 @@
 <h1>A/B Test Calculator</h1>
 <div class="container">
     <form id="abTestForm">
-        <label for="baseline">Baseline Mean (Control):</label>
-        <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2" required>
+        <label for="metricType">Please choose between discrete (100) or continuous (0.1):</label>
+        <select id="metricType" required>
+            <option value="discrete">Discrete (e.g., 100)</option>
+            <option value="continuous">Continuous (e.g., 0.1)</option>
+        </select>
+
+        <label for="baseline">Baseline Value:</label>
+        <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2 for continuous or 100 for discrete" required>
 
         <label for="impact">Minimum Detectable Impact:</label>
-        <input type="number" id="impact" step="0.01" placeholder="e.g., 0.05" required>
+        <input type="number" id="impact" step="0.01" placeholder="e.g., 0.05 for continuous or 10 for discrete" required>
 
         <label for="alpha">Significance Level (α):</label>
         <input type="number" id="alpha" step="0.01" value="0.05" required>
 
         <label for="power">Power (1-β):</label>
         <input type="number" id="power" step="0.01" value="0.8" required>
-
-        <label for="metricType">Metric Type:</label>
-        <select id="metricType">
-            <option value="continuous">Continuous</option>
-            <option value="discrete">Discrete</option>
-        </select>
 
         <label for="dailyTraffic">Daily Traffic:</label>
         <input type="number" id="dailyTraffic" placeholder="e.g., 1000">
@@ -91,12 +91,12 @@
 
 <script>
     function calculateABTest() {
+        const metricType = document.getElementById('metricType').value;
         const baseline = parseFloat(document.getElementById('baseline').value);
         const impact = parseFloat(document.getElementById('impact').value);
         const alpha = parseFloat(document.getElementById('alpha').value);
         const power = parseFloat(document.getElementById('power').value);
         const dailyTraffic = parseFloat(document.getElementById('dailyTraffic').value);
-        const metricType = document.getElementById('metricType').value;
 
         if (isNaN(baseline) || isNaN(impact) || isNaN(alpha) || isNaN(power)) {
             alert('Please fill out all required fields correctly.');
@@ -107,16 +107,15 @@
         const zBeta = getZValue(power);
 
         let sampleSizePerGroup, totalSampleSize;
-        
+
         if (metricType === 'continuous') {
             const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
             sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
             totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
         } else if (metricType === 'discrete') {
-            // For discrete metrics, use the binomial distribution approximation
-            const p1 = baseline;
-            const p2 = baseline + impact;
-            sampleSizePerGroup = Math.ceil((zAlpha + zBeta) * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)) / impact);
+            const p1 = baseline / 100;
+            const p2 = (baseline + impact) / 100;
+            sampleSizePerGroup = Math.ceil((zAlpha + zBeta) * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)) / (impact / 100));
             totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
         }
 
