@@ -24,6 +24,13 @@
             text-align: center;
             color: #555;
         }
+        .panel {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
         label {
             display: block;
             margin: 15px 0 5px;
@@ -40,7 +47,6 @@
             display: block;
             width: 100%;
             padding: 10px;
-            background-color: #28a745;
             color: #fff;
             border: none;
             border-radius: 5px;
@@ -48,7 +54,13 @@
             cursor: pointer;
         }
         button:hover {
-            background-color: #218838;
+            opacity: 0.8;
+        }
+        .green-button {
+            background-color: #28a745;
+        }
+        .blue-button {
+            background-color: #007bff;
         }
         .result {
             margin-top: 20px;
@@ -72,59 +84,59 @@
 <body>
 <div class="container">
     <h1>A/B Test Calculator</h1>
-    <div class="split">
-        <!-- A/B Test Size Calculator -->
-        <div>
-            <form id="abTestForm">
-                <label for="dataType">Please choose between discrete (100) or continuous (0.1):</label>
-                <select id="dataType" required onchange="togglePopulationSize()">
-                    <option value="discrete">Discrete</option>
-                    <option value="continuous">Continuous</option>
-                </select>
 
-                <label for="baseline">Baseline Mean (Control):</label>
-                <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2" required>
+    <!-- A/B Test Size Calculator Panel -->
+    <div class="panel">
+        <h3>A/B Test Size Calculator</h3>
+        <form id="abTestForm">
+            <label for="dataType">Please choose between discrete (100) or continuous (0.1):</label>
+            <select id="dataType" required onchange="togglePopulationSize()">
+                <option value="discrete">Discrete</option>
+                <option value="continuous">Continuous</option>
+            </select>
 
-                <label for="impact">Minimum Detectable Impact:</label>
-                <input type="number" id="impact" step="0.01" placeholder="e.g., 0.05" required>
+            <label for="baseline">Baseline Mean (Control):</label>
+            <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2" required>
 
-                <label for="alpha">Significance Level (α):</label>
-                <input type="number" id="alpha" step="0.01" value="0.05" required>
+            <label for="impact">Minimum Detectable Impact:</label>
+            <input type="number" id="impact" step="0.01" placeholder="e.g., 0.05" required>
 
-                <label for="power">Power (1-β):</label>
-                <input type="number" id="power" step="0.01" value="0.8" required>
+            <label for="alpha">Significance Level (α):</label>
+            <input type="number" id="alpha" step="0.01" value="0.05" required>
 
-                <label for="dailyTraffic">Daily Traffic:</label>
-                <input type="number" id="dailyTraffic" placeholder="e.g., 100">
+            <label for="power">Power (1-β):</label>
+            <input type="number" id="power" step="0.01" value="0.8" required>
 
-                <label for="populationSize">Population Size <span class="default-note">(For Discrete Only, default is set to 10000.)</span>:</label>
-                <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
+            <label for="dailyTraffic">Daily Traffic:</label>
+            <input type="number" id="dailyTraffic" placeholder="e.g., 100">
 
-                <button type="button" onclick="calculateABTest()">Calculate</button>
-            </form>
+            <label for="populationSize">Population Size <span class="default-note">(For Discrete Only, default is set to 10000.)</span>:</label>
+            <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
 
-            <div id="result" class="result" style="display: none;"></div>
-        </div>
+            <button type="button" class="green-button" onclick="calculateABTest()">Calculate</button>
+        </form>
 
-        <!-- P-Value Calculator -->
-        <div>
-            <h3>P-Value Calculator</h3>
-            <label for="visitsControl">Number of Visits (Control):</label>
-            <input type="number" id="visitsControl" placeholder="e.g., 1000" required>
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
 
-            <label for="conversionsControl">Conversions (Control):</label>
-            <input type="number" id="conversionsControl" placeholder="e.g., 50" required>
+    <!-- P-Value Calculator Panel -->
+    <div class="panel">
+        <h3>P-Value Calculator</h3>
+        <label for="visitsControl">Number of Visits (Control):</label>
+        <input type="number" id="visitsControl" placeholder="e.g., 1000" required>
 
-            <label for="visitsExperimental">Number of Visits (Experimental):</label>
-            <input type="number" id="visitsExperimental" placeholder="e.g., 1000" required>
+        <label for="conversionsControl">Conversions (Control):</label>
+        <input type="number" id="conversionsControl" placeholder="e.g., 50" required>
 
-            <label for="conversionsExperimental">Conversions (Experimental):</label>
-            <input type="number" id="conversionsExperimental" placeholder="e.g., 60" required>
+        <label for="visitsExperimental">Number of Visits (Experimental):</label>
+        <input type="number" id="visitsExperimental" placeholder="e.g., 1000" required>
 
-            <button type="button" onclick="calculatePValue()">Calculate P-Value</button>
+        <label for="conversionsExperimental">Conversions (Experimental):</label>
+        <input type="number" id="conversionsExperimental" placeholder="e.g., 60" required>
 
-            <div id="pValueResult" class="result" style="display: none;"></div>
-        </div>
+        <button type="button" class="blue-button" onclick="calculatePValue()">Calculate P-Value</button>
+
+        <div id="pValueResult" class="result" style="display: none;"></div>
     </div>
 </div>
 
@@ -233,52 +245,53 @@ function togglePopulationSize() {
     }
 
 
-// Calculate P-Value for A/B Test
-function calculatePValue() {
-    const visitsControl = parseInt(document.getElementById('visitsControl').value);
-    const conversionsControl = parseInt(document.getElementById('conversionsControl').value);
-    const visitsExperimental = parseInt(document.getElementById('visitsExperimental').value);
-    const conversionsExperimental = parseInt(document.getElementById('conversionsExperimental').value);
+    // Calculate P-Value for A/B Test
+    function calculatePValue() {
+        const visitsControl = parseInt(document.getElementById('visitsControl').value);
+        const conversionsControl = parseInt(document.getElementById('conversionsControl').value);
+        const visitsExperimental = parseInt(document.getElementById('visitsExperimental').value);
+        const conversionsExperimental = parseInt(document.getElementById('conversionsExperimental').value);
 
-    if (isNaN(visitsControl) || isNaN(conversionsControl) || isNaN(visitsExperimental) || isNaN(conversionsExperimental)) {
-        alert('Please fill out all required fields correctly.');
-        return;
+        if (isNaN(visitsControl) || isNaN(conversionsControl) || isNaN(visitsExperimental) || isNaN(conversionsExperimental)) {
+            alert('Please fill out all required fields correctly.');
+            return;
+        }
+
+        const pControl = conversionsControl / visitsControl;
+        const pExperimental = conversionsExperimental / visitsExperimental;
+
+        const pooledP = (conversionsControl + conversionsExperimental) / (visitsControl + visitsExperimental);
+
+        const standardError = Math.sqrt(pooledP * (1 - pooledP) * (1 / visitsControl + 1 / visitsExperimental));
+
+        const zScore = (pExperimental - pControl) / standardError;
+
+        const pValue = 2 * (1 - cumulativeNormal(zScore));
+
+        let recommendation = '';
+        if (pValue < 0.05) {
+            recommendation = 'Reject the null hypothesis: The difference is statistically significant.';
+        } else if (pValue >= 0.05 && pValue <= 0.10) {
+            recommendation = 'The result is inconclusive.';
+        } else {
+            recommendation = 'Do not reject the null hypothesis: No significant difference.';
+        }
+
+        document.getElementById('pValueResult').style.display = 'block';
+        document.getElementById('pValueResult').innerHTML = `
+            <p><strong>P-Value:</strong> ${pValue.toFixed(4)}</p>
+            <p><strong>Recommendation:</strong> ${recommendation}</p>
+        `;
     }
 
-    const pControl = conversionsControl / visitsControl;
-    const pExperimental = conversionsExperimental / visitsExperimental;
+    // Cumulative normal function for zScore to calculate p-value
+    function cumulativeNormal(z) {
+        const t = 1 / (1 + 0.2316419 * Math.abs(z));
+        const d = 0.3989422804014337 * Math.exp(-z * z / 2);
+        const p = d * t * (1.330274429 + t * (-1.821255978 + t * (1.781477937 + t * (-0.356563782 + t * 0.319381530))));
 
-    const pooledP = (conversionsControl + conversionsExperimental) / (visitsControl + visitsExperimental);
-
-    const standardError = Math.sqrt(pooledP * (1 - pooledP) * (1 / visitsControl + 1 / visitsExperimental));
-
-    const zScore = (pExperimental - pControl) / standardError;
-
-    const pValue = 2 * (1 - cumulativeNormal(zScore));
-
-    let recommendation = '';
-    if (pValue < 0.05) {
-        recommendation = 'Reject the null hypothesis: The difference is statistically significant.';
-    } else if (pValue >= 0.05 && pValue <= 0.10) {
-        recommendation = 'The result is inconclusive.';
-    } else {
-        recommendation = 'Do not reject the null hypothesis: No significant difference.';
+        return z >= 0 ? 1 - p : p;
     }
-
-    document.getElementById('pValueResult').style.display = 'block';
-    document.getElementById('pValueResult').innerHTML = `
-        <p><strong>P-Value:</strong> ${pValue.toFixed(4)}</p>
-        <p><strong>Recommendation:</strong> ${recommendation}</p>
-    `;
-}
-
-// Cumulative normal function for zScore to calculate p-value
-function cumulativeNormal(z) {
-    const t = 1 / (1 + 0.2316419 * Math.abs(z));
-    const d = 0.3989422804014337 * Math.exp(-0.5 * z * z);
-    const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
-    return z >= 0 ? 1 - p : p;
-}
 </script>
 </body>
 </html>
