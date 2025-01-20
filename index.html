@@ -13,20 +13,16 @@
             color: #333;
         }
         .container {
-            display: flex;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 50px auto;
             padding: 20px;
             background: #fff;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
         }
-        .calculator {
-            width: 50%;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .calculator h1 {
+        h1 {
             text-align: center;
             color: #555;
         }
@@ -35,7 +31,7 @@
             margin: 15px 0 5px;
             font-weight: bold;
         }
-        input, select {
+        input {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -62,26 +58,17 @@
             background: #f9f9f9;
             border-left: 5px solid #28a745;
         }
-        .default-note {
-            font-size: 0.9em;
-            color: #888;
-        }
-        select:disabled {
-            background-color: #f4f4f9;
-            color: #ccc;
-        }
     </style>
 </head>
 <body>
-<h1>Hello World</h1>
-<p>I'm hosted with GitHub Pages.</p>
+
+<h1>A/B Test Calculator</h1>
 <div class="container">
-    <!-- Left side: Size & Duration Calculator -->
-    <div class="calculator">
-        <h1>A/B Test Size and Duration Calculator</h1>
+    <!-- Left side: Sample Size and Duration Calculator -->
+    <div style="width: 45%;">
         <form id="abTestForm">
-            <label for="dataType">Please choose between discrete (100) or continuous (0.1):</label>
-            <select id="dataType" required onchange="togglePopulationSize()">
+            <label for="metricType">Select Metric Type:</label>
+            <select id="metricType" onchange="toggleInputs()">
                 <option value="discrete">Discrete</option>
                 <option value="continuous">Continuous</option>
             </select>
@@ -99,10 +86,10 @@
             <input type="number" id="power" step="0.01" value="0.8" required>
 
             <label for="dailyTraffic">Daily Traffic:</label>
-            <input type="number" id="dailyTraffic" placeholder="e.g., 100">
+            <input type="number" id="dailyTraffic" placeholder="e.g., 1000">
 
-            <label for="populationSize">Population Size <span class="default-note">(Default is 10000 for discrete)</span>:</label>
-            <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
+            <label for="populationSize">Population Size (only for Discrete):</label>
+            <input type="number" id="populationSize" placeholder="e.g., 10000">
 
             <button type="button" onclick="calculateABTest()">Calculate</button>
         </form>
@@ -111,33 +98,25 @@
     </div>
 
     <!-- Right side: Significance Testing Calculator -->
-    <div class="calculator">
-        <h1>Significance Testing Calculator</h1>
-        <form id="significanceTestForm">
-            <label for="dataTypeTest">Please choose between discrete (100) or continuous (0.1):</label>
-            <select id="dataTypeTest" required onchange="toggleTestInputs()">
-                <option value="discrete">Discrete</option>
-                <option value="continuous">Continuous</option>
-            </select>
+    <div style="width: 45%;">
+        <h2>Significance Testing</h2>
+        <form id="significanceForm">
+            <label for="numVisitorsA">Number of Visitors (Version A):</label>
+            <input type="number" id="numVisitorsA" required>
 
-            <label for="meanA">Mean of Version A:</label>
-            <input type="number" id="meanA" step="0.01" placeholder="e.g., 0.2" required>
+            <label for="numConversionsA">Number of Conversions (Version A):</label>
+            <input type="number" id="numConversionsA" required>
 
-            <label for="meanB">Mean of Version B:</label>
-            <input type="number" id="meanB" step="0.01" placeholder="e.g., 0.25" required>
+            <label for="numVisitorsB">Number of Visitors (Version B):</label>
+            <input type="number" id="numVisitorsB" required>
 
-            <div id="stdDevInputs" style="display: none;">
-                <label for="stdDevA">Standard Deviation of Version A:</label>
-                <input type="number" id="stdDevA" step="0.01" placeholder="e.g., 0.05" required>
+            <label for="numConversionsB">Number of Conversions (Version B):</label>
+            <input type="number" id="numConversionsB" required>
 
-                <label for="stdDevB">Standard Deviation of Version B:</label>
-                <input type="number" id="stdDevB" step="0.01" placeholder="e.g., 0.05" required>
-            </div>
+            <label for="alphaSignificance">Significance Level (α):</label>
+            <input type="number" id="alphaSignificance" value="0.05" step="0.01" required>
 
-            <label for="alphaTest">Significance Level (α):</label>
-            <input type="number" id="alphaTest" step="0.01" value="0.05" required>
-
-            <button type="button" onclick="calculateSignificance()">Test Significance</button>
+            <button type="button" onclick="calculateSignificance()">Calculate Significance</button>
         </form>
 
         <div id="significanceResult" class="result" style="display: none;"></div>
@@ -145,39 +124,26 @@
 </div>
 
 <script>
-    // Toggle Population Size and Input Fields based on Data Type
-    function togglePopulationSize() {
-        const dataType = document.getElementById('dataType').value;
-        const populationSizeInput = document.getElementById('populationSize');
+    function toggleInputs() {
+        const metricType = document.getElementById("metricType").value;
+        const populationSizeInput = document.getElementById("populationSize");
 
-        if (dataType === 'continuous') {
+        if (metricType === "continuous") {
             populationSizeInput.disabled = true;
-            populationSizeInput.value = '';  // Clear the value if continuous
+            populationSizeInput.placeholder = "";
         } else {
             populationSizeInput.disabled = false;
-            populationSizeInput.value = '10000';  // Default to 10000 if discrete
+            populationSizeInput.placeholder = "e.g., 10000";
         }
     }
 
-    function toggleTestInputs() {
-        const dataTypeTest = document.getElementById('dataTypeTest').value;
-        const stdDevInputs = document.getElementById('stdDevInputs');
-
-        if (dataTypeTest === 'continuous') {
-            stdDevInputs.style.display = 'none';
-        } else {
-            stdDevInputs.style.display = 'block';
-        }
-    }
-
-    // A/B Test Size and Duration Calculation
     function calculateABTest() {
         const baseline = parseFloat(document.getElementById('baseline').value);
         const impact = parseFloat(document.getElementById('impact').value);
         const alpha = parseFloat(document.getElementById('alpha').value);
         const power = parseFloat(document.getElementById('power').value);
         const dailyTraffic = parseFloat(document.getElementById('dailyTraffic').value);
-        const populationSize = parseFloat(document.getElementById('populationSize').value) || 10000; // Default to 10000
+        const populationSize = parseFloat(document.getElementById('populationSize').value);
 
         if (isNaN(baseline) || isNaN(impact) || isNaN(alpha) || isNaN(power)) {
             alert('Please fill out all required fields correctly.');
@@ -187,21 +153,9 @@
         const zAlpha = getZValue(1 - alpha / 2);
         const zBeta = getZValue(power);
 
-        let totalSampleSize = 0;
-        
-        if (document.getElementById('dataType').value === 'continuous') {
-            // Continuous calculation
-            const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
-            const sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
-            totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
-        } else {
-            // Discrete calculation
-            const p1 = baseline / populationSize;
-            const p2 = (baseline + impact) / populationSize;
-            const pooledStdDev = Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
-            const sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / (impact / populationSize), 2);
-            totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
-        }
+        const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
+        const sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
+        const totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
 
         let duration = 'N/A';
         if (!isNaN(dailyTraffic) && dailyTraffic > 0) {
@@ -215,73 +169,32 @@
         `;
     }
 
-    // Significance Testing Calculation
     function calculateSignificance() {
-        const dataTypeTest = document.getElementById('dataTypeTest').value;
-        const meanA = parseFloat(document.getElementById('meanA').value);
-        const meanB = parseFloat(document.getElementById('meanB').value);
-        const alphaTest = parseFloat(document.getElementById('alphaTest').value);
+        const numVisitorsA = parseInt(document.getElementById('numVisitorsA').value);
+        const numConversionsA = parseInt(document.getElementById('numConversionsA').value);
+        const numVisitorsB = parseInt(document.getElementById('numVisitorsB').value);
+        const numConversionsB = parseInt(document.getElementById('numConversionsB').value);
+        const alphaSignificance = parseFloat(document.getElementById('alphaSignificance').value);
 
-        let stdDevA = 0, stdDevB = 0;
-        if (dataTypeTest === 'discrete') {
-            stdDevA = parseFloat(document.getElementById('stdDevA').value);
-            stdDevB = parseFloat(document.getElementById('stdDevB').value);
-        }
+        const pA = numConversionsA / numVisitorsA;
+        const pB = numConversionsB / numVisitorsB;
+        
+        const pPooled = (numConversionsA + numConversionsB) / (numVisitorsA + numVisitorsB);
+        const zStat = (pA - pB) / Math.sqrt(pPooled * (1 - pPooled) * (1 / numVisitorsA + 1 / numVisitorsB));
+        
+        const pValue = 2 * (1 - normalCdf(Math.abs(zStat)));
 
-        // Calculate p-value based on the data type
-        let pValue;
-        if (dataTypeTest === 'continuous') {
-            pValue = calculateContinuousPValue(meanA, meanB);
-        } else {
-            pValue = calculateDiscretePValue(meanA, stdDevA, meanB, stdDevB);
-        }
-
-        // Determine result
-        let resultMessage = pValue < alphaTest ? "Reject the null hypothesis" : "Fail to reject the null hypothesis";
-        let significanceResultText = `
-            <p><strong>p-value:</strong> ${pValue.toFixed(4)}</p>
-            <p><strong>Conclusion:</strong> ${resultMessage}</p>
-        `;
+        const result = pValue < alphaSignificance ? 'Reject the null hypothesis' : 'Fail to reject the null hypothesis';
 
         document.getElementById('significanceResult').style.display = 'block';
-        document.getElementById('significanceResult').innerHTML = significanceResultText;
+        document.getElementById('significanceResult').innerHTML = `
+            <p><strong>P-value:</strong> ${pValue.toFixed(4)}</p>
+            <p><strong>Conclusion:</strong> ${result}</p>
+        `;
     }
 
-    // Calculate p-value for continuous data (two-sample t-test)
-    function calculateContinuousPValue(meanA, meanB) {
-        const stdDev = Math.sqrt(((meanA * (1 - meanA)) + (meanB * (1 - meanB))) / 2);
-        return (meanA - meanB) / stdDev;
-    }
-
-    // Calculate p-value for discrete data (two-sample z-test)
-    function calculateDiscretePValue(meanA, stdDevA, meanB, stdDevB) {
-        const pooledStdDev = Math.sqrt((Math.pow(stdDevA, 2) + Math.pow(stdDevB, 2)) / 2);
-        return (meanA - meanB) / pooledStdDev;
-    }
-
-    // Z-value for calculating the significance
-    function getZValue(probability) {
-        return -1.0 * Math.sqrt(2.0) * erfcinv(2.0 * probability);
-    }
-
-    function erfcinv(p) {
-        let j = 0;
-        let x, err, t, pp;
-
-        if (p >= 2) return -100;
-        if (p <= 0) return 100;
-
-        pp = p < 1 ? p : 2 - p;
-        t = Math.sqrt(-2 * Math.log(pp / 2));
-
-        x = -0.70711 * ((2.30753 + t * 0.27061) / (1 + t * (0.99229 + t * 0.04481))) + t;
-
-        err = 0.0;
-        for (j = 0; j < 2; j++) {
-            err = Math.exp(-Math.pow(x, 2) / 2) / (Math.sqrt(2 * Math.PI));
-        }
-
-        return x;
+    function normalCdf(x) {
+        return (1.0 + Math.erf(x / Math.sqrt(2))) / 2.0;
     }
 </script>
 
