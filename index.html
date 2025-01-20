@@ -74,7 +74,7 @@
         <h2>Sample Size and Duration Calculator</h2>
         <form id="abTestForm">
             <label for="metricType">Select Metric Type:</label>
-            <select id="metricType">
+            <select id="metricType" onchange="toggleInputs()">
                 <option value="continuous">Continuous (e.g., conversion rate 0.1)</option>
                 <option value="discrete">Discrete (e.g., number of visitors)</option>
             </select>
@@ -91,11 +91,11 @@
             <label for="power">Power (1-β):</label>
             <input type="number" id="power" step="0.01" value="0.8" required>
 
-            <label for="populationSize">Population Size (Optional for Discrete):</label>
-            <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
+            <label for="populationSize" id="populationLabel" style="display: none;">Population Size (Optional for Discrete):</label>
+            <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000" style="display: none;">
 
             <label for="dailyTraffic">Daily Traffic:</label>
-            <input type="number" id="dailyTraffic" placeholder="e.g., 1000">
+            <input type="number" id="dailyTraffic" placeholder="e.g., 1000" required>
 
             <button type="button" onclick="calculateABTest()">Calculate</button>
         </form>
@@ -127,6 +127,20 @@
 </div>
 
 <script>
+    function toggleInputs() {
+        const metricType = document.getElementById('metricType').value;
+        const populationInput = document.getElementById('populationSize');
+        const populationLabel = document.getElementById('populationLabel');
+        
+        if (metricType === 'discrete') {
+            populationInput.style.display = 'block';
+            populationLabel.style.display = 'block';
+        } else {
+            populationInput.style.display = 'none';
+            populationLabel.style.display = 'none';
+        }
+    }
+
     function calculateABTest() {
         const metricType = document.getElementById('metricType').value;
         const baseline = parseFloat(document.getElementById('baseline').value);
@@ -196,6 +210,10 @@
 
     function normalCdf(z) {
         return (1.0 + Math.erf(z / Math.sqrt(2.0))) / 2.0;
+    }
+
+    function getZValue(probability) {
+        return -Math.sqrt(2) * Math.erfcinv(2 * probability);
     }
 </script>
 </body>
