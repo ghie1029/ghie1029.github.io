@@ -56,15 +56,11 @@
             background: #f9f9f9;
             border-left: 5px solid #28a745;
         }
-        .section {
-            margin-top: 40px;
-        }
     </style>
 </head>
 <body>
-
+<h1>A/B Test Calculator</h1>
 <div class="container">
-    <h1>A/B Test Calculator</h1>
     <form id="abTestForm">
         <label for="baseline">Baseline Mean (Control):</label>
         <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2" required>
@@ -78,46 +74,29 @@
         <label for="power">Power (1-β):</label>
         <input type="number" id="power" step="0.01" value="0.8" required>
 
-        <label for="dailyTraffic">Daily Traffic (Discrete option):</label>
-        <input type="number" id="dailyTraffic" placeholder="e.g., 1000" required>
+        <label for="metricType">Metric Type:</label>
+        <select id="metricType">
+            <option value="continuous">Continuous</option>
+            <option value="discrete">Discrete</option>
+        </select>
 
-        <label for="discreteMetrics">Use discrete metrics? (like 1000, 10):</label>
-        <input type="checkbox" id="discreteMetrics" onchange="toggleDiscrete()">
+        <label for="dailyTraffic">Daily Traffic:</label>
+        <input type="number" id="dailyTraffic" placeholder="e.g., 1000">
 
         <button type="button" onclick="calculateABTest()">Calculate</button>
     </form>
 
     <div id="result" class="result" style="display: none;"></div>
-
-    <!-- Significance Testing Section -->
-    <div class="section">
-        <h2>Significance Testing Calculator</h2>
-        <label for="meanA">Mean of Group A:</label>
-        <input type="number" id="meanA" step="0.01" placeholder="e.g., 0.25" required>
-
-        <label for="meanB">Mean of Group B:</label>
-        <input type="number" id="meanB" step="0.01" placeholder="e.g., 0.30" required>
-
-        <label for="stdDevA">Standard Deviation of Group A:</label>
-        <input type="number" id="stdDevA" step="0.01" placeholder="e.g., 0.05" required>
-
-        <label for="stdDevB">Standard Deviation of Group B:</label>
-        <input type="number" id="stdDevB" step="0.01" placeholder="e.g., 0.05" required>
-
-        <button type="button" onclick="calculateSignificance()">Test Significance</button>
-        <div id="significanceResult" class="result" style="display: none;"></div>
-    </div>
 </div>
 
 <script>
-    // Function to calculate the A/B Test
     function calculateABTest() {
         const baseline = parseFloat(document.getElementById('baseline').value);
         const impact = parseFloat(document.getElementById('impact').value);
         const alpha = parseFloat(document.getElementById('alpha').value);
         const power = parseFloat(document.getElementById('power').value);
         const dailyTraffic = parseFloat(document.getElementById('dailyTraffic').value);
-        const discreteMetrics = document.getElementById('discreteMetrics').checked;
+        const metricType = document.getElementById('metricType').value;
 
         if (isNaN(baseline) || isNaN(impact) || isNaN(alpha) || isNaN(power)) {
             alert('Please fill out all required fields correctly.');
@@ -127,17 +106,23 @@
         const zAlpha = getZValue(1 - alpha / 2);
         const zBeta = getZValue(power);
 
-        const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
-        const sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
-        const totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
+        let sampleSizePerGroup, totalSampleSize;
+        
+        if (metricType === 'continuous') {
+            const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
+            sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
+            totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
+        } else if (metricType === 'discrete') {
+            // For discrete metrics, use the binomial distribution approximation
+            const p1 = baseline;
+            const p2 = baseline + impact;
+            sampleSizePerGroup = Math.ceil((zAlpha + zBeta) * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)) / impact);
+            totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
+        }
 
         let duration = 'N/A';
         if (!isNaN(dailyTraffic) && dailyTraffic > 0) {
-            if (discreteMetrics) {
-                duration = Math.ceil(totalSampleSize / dailyTraffic) + ' periods (rounded)';
-            } else {
-                duration = Math.ceil(totalSampleSize / dailyTraffic) + ' days';
-            }
+            duration = Math.ceil(totalSampleSize / dailyTraffic) + ' days';
         }
 
         document.getElementById('result').style.display = 'block';
@@ -147,22 +132,10 @@
         `;
     }
 
-    // Function to toggle the discrete metrics option
-    function toggleDiscrete() {
-        const discreteMetrics = document.getElementById('discreteMetrics').checked;
-        if (discreteMetrics) {
-            document.getElementById('dailyTraffic').step = 1; // Round traffic to whole numbers
-        } else {
-            document.getElementById('dailyTraffic').step = 0.01;
-        }
-    }
-
-    // Function to calculate Z-value (for significance test)
     function getZValue(probability) {
         return -1.0 * Math.sqrt(2.0) * erfcinv(2.0 * probability);
     }
 
-    // Inverse error function calculation
     function erfcinv(p) {
         let j = 0;
         let x, err, t, pp;
@@ -182,12 +155,10 @@
         return p < 1 ? x : -x;
     }
 
-    // Error function calculation
     function erfc(x) {
         return 1 - erf(x);
     }
 
-    // Error function (approximated)
     function erf(x) {
         const sign = x >= 0 ? 1 : -1;
         x = Math.abs(x);
@@ -203,33 +174,6 @@
         const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
 
         return sign * y;
-    }
-
-    // Function to calculate significance
-    function calculateSignificance() {
-        const meanA = parseFloat(document.getElementById('meanA').value);
-        const meanB = parseFloat(document.getElementById('meanB').value);
-        const stdDevA = parseFloat(document.getElementById('stdDevA').value);
-        const stdDevB = parseFloat(document.getElementById('stdDevB').value);
-
-        if (isNaN(meanA) || isNaN(meanB) || isNaN(stdDevA) || isNaN(stdDevB)) {
-            alert('Please fill out all significance testing fields.');
-            return;
-        }
-
-        const pooledStdDev = Math.sqrt((Math.pow(stdDevA, 2) + Math.pow(stdDevB, 2)) / 2);
-        const zScore = (meanA - meanB) / pooledStdDev;
-
-        document.getElementById('significanceResult').style.display = 'block';
-        document.getElementById('significanceResult').innerHTML = `
-            <p><strong>Z-Score:</strong> ${zScore.toFixed(2)}</p>
-            <p><strong>p-value:</strong> ${getPValue(zScore).toFixed(4)}</p>
-        `;
-    }
-
-    // Calculate p-value from Z-score
-    function getPValue(zScore) {
-        return 0.5 * erfc(-zScore / Math.sqrt(2));
     }
 </script>
 
