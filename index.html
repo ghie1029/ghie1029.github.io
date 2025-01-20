@@ -13,7 +13,7 @@
             color: #333;
         }
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 50px auto;
             padding: 20px;
             background: #fff;
@@ -58,19 +58,25 @@
             background: #f9f9f9;
             border-left: 5px solid #28a745;
         }
+        .side-by-side {
+            width: 48%;
+        }
+        .side-by-side input {
+            width: 90%;
+        }
     </style>
 </head>
 <body>
-
 <h1>A/B Test Calculator</h1>
 <div class="container">
-    <!-- Left side: Sample Size and Duration Calculator -->
-    <div style="width: 45%;">
+    <!-- Sample Size Calculator (left side) -->
+    <div class="side-by-side">
+        <h2>Sample Size and Duration Calculator</h2>
         <form id="abTestForm">
             <label for="metricType">Select Metric Type:</label>
-            <select id="metricType" onchange="toggleInputs()">
-                <option value="discrete">Discrete</option>
-                <option value="continuous">Continuous</option>
+            <select id="metricType">
+                <option value="continuous">Continuous (e.g., conversion rate 0.1)</option>
+                <option value="discrete">Discrete (e.g., number of visitors)</option>
             </select>
 
             <label for="baseline">Baseline Mean (Control):</label>
@@ -85,11 +91,11 @@
             <label for="power">Power (1-β):</label>
             <input type="number" id="power" step="0.01" value="0.8" required>
 
+            <label for="populationSize">Population Size (Optional for Discrete):</label>
+            <input type="number" id="populationSize" placeholder="e.g., 10000" value="10000">
+
             <label for="dailyTraffic">Daily Traffic:</label>
             <input type="number" id="dailyTraffic" placeholder="e.g., 1000">
-
-            <label for="populationSize">Population Size (only for Discrete):</label>
-            <input type="number" id="populationSize" placeholder="e.g., 10000">
 
             <button type="button" onclick="calculateABTest()">Calculate</button>
         </form>
@@ -97,24 +103,21 @@
         <div id="result" class="result" style="display: none;"></div>
     </div>
 
-    <!-- Right side: Significance Testing Calculator -->
-    <div style="width: 45%;">
-        <h2>Significance Testing</h2>
-        <form id="significanceForm">
-            <label for="numVisitorsA">Number of Visitors (Version A):</label>
-            <input type="number" id="numVisitorsA" required>
+    <!-- Significance Test Calculator (right side) -->
+    <div class="side-by-side">
+        <h2>Significance Test</h2>
+        <form id="significanceTestForm">
+            <label for="versionAVisitors">Version A Visitors:</label>
+            <input type="number" id="versionAVisitors" placeholder="e.g., 1000" required>
 
-            <label for="numConversionsA">Number of Conversions (Version A):</label>
-            <input type="number" id="numConversionsA" required>
+            <label for="versionAConversions">Version A Conversions:</label>
+            <input type="number" id="versionAConversions" placeholder="e.g., 200" required>
 
-            <label for="numVisitorsB">Number of Visitors (Version B):</label>
-            <input type="number" id="numVisitorsB" required>
+            <label for="versionBVisitors">Version B Visitors:</label>
+            <input type="number" id="versionBVisitors" placeholder="e.g., 1000" required>
 
-            <label for="numConversionsB">Number of Conversions (Version B):</label>
-            <input type="number" id="numConversionsB" required>
-
-            <label for="alphaSignificance">Significance Level (α):</label>
-            <input type="number" id="alphaSignificance" value="0.05" step="0.01" required>
+            <label for="versionBConversions">Version B Conversions:</label>
+            <input type="number" id="versionBConversions" placeholder="e.g., 220" required>
 
             <button type="button" onclick="calculateSignificance()">Calculate Significance</button>
         </form>
@@ -124,79 +127,76 @@
 </div>
 
 <script>
-    function toggleInputs() {
-        const metricType = document.getElementById("metricType").value;
-        const populationSizeInput = document.getElementById("populationSize");
-
-        if (metricType === "continuous") {
-            populationSizeInput.disabled = true;
-            populationSizeInput.placeholder = "";
-        } else {
-            populationSizeInput.disabled = false;
-            populationSizeInput.placeholder = "e.g., 10000";
-        }
-    }
-
     function calculateABTest() {
+        const metricType = document.getElementById('metricType').value;
         const baseline = parseFloat(document.getElementById('baseline').value);
         const impact = parseFloat(document.getElementById('impact').value);
         const alpha = parseFloat(document.getElementById('alpha').value);
         const power = parseFloat(document.getElementById('power').value);
         const dailyTraffic = parseFloat(document.getElementById('dailyTraffic').value);
-        const populationSize = parseFloat(document.getElementById('populationSize').value);
+        const populationSize = parseFloat(document.getElementById('populationSize').value) || 10000;
 
-        if (isNaN(baseline) || isNaN(impact) || isNaN(alpha) || isNaN(power)) {
+        if (isNaN(baseline) || isNaN(impact) || isNaN(alpha) || isNaN(power) || isNaN(dailyTraffic)) {
             alert('Please fill out all required fields correctly.');
             return;
         }
 
-        const zAlpha = getZValue(1 - alpha / 2);
-        const zBeta = getZValue(power);
+        let totalSampleSize;
+        if (metricType === "continuous") {
+            const zAlpha = getZValue(1 - alpha / 2);
+            const zBeta = getZValue(power);
 
-        const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
-        const sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
-        const totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
+            const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
+            totalSampleSize = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
+        } else if (metricType === "discrete") {
+            const zAlpha = getZValue(1 - alpha / 2);
+            const zBeta = getZValue(power);
 
-        let duration = 'N/A';
-        if (!isNaN(dailyTraffic) && dailyTraffic > 0) {
-            duration = Math.ceil(totalSampleSize / dailyTraffic) + ' days';
+            const pooledStdDev = Math.sqrt((baseline * (1 - baseline)) + ((baseline + impact) * (1 - (baseline + impact))));
+            totalSampleSize = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
         }
+
+        const duration = Math.ceil(totalSampleSize / dailyTraffic) + ' days';
 
         document.getElementById('result').style.display = 'block';
         document.getElementById('result').innerHTML = `
-            <p><strong>Total Sample Size Required (Must be equally split between the two versions.):</strong> ${totalSampleSize}</p>
+            <p><strong>Total Sample Size Required:</strong> ${Math.ceil(totalSampleSize)}</p>
             <p><strong>Estimated Duration:</strong> ${duration}</p>
         `;
     }
 
     function calculateSignificance() {
-        const numVisitorsA = parseInt(document.getElementById('numVisitorsA').value);
-        const numConversionsA = parseInt(document.getElementById('numConversionsA').value);
-        const numVisitorsB = parseInt(document.getElementById('numVisitorsB').value);
-        const numConversionsB = parseInt(document.getElementById('numConversionsB').value);
-        const alphaSignificance = parseFloat(document.getElementById('alphaSignificance').value);
+        const versionAVisitors = parseInt(document.getElementById('versionAVisitors').value);
+        const versionAConversions = parseInt(document.getElementById('versionAConversions').value);
+        const versionBVisitors = parseInt(document.getElementById('versionBVisitors').value);
+        const versionBConversions = parseInt(document.getElementById('versionBConversions').value);
 
-        const pA = numConversionsA / numVisitorsA;
-        const pB = numConversionsB / numVisitorsB;
-        
-        const pPooled = (numConversionsA + numConversionsB) / (numVisitorsA + numVisitorsB);
-        const zStat = (pA - pB) / Math.sqrt(pPooled * (1 - pPooled) * (1 / numVisitorsA + 1 / numVisitorsB));
-        
-        const pValue = 2 * (1 - normalCdf(Math.abs(zStat)));
+        if (isNaN(versionAVisitors) || isNaN(versionAConversions) || isNaN(versionBVisitors) || isNaN(versionBConversions)) {
+            alert('Please fill out all required fields correctly.');
+            return;
+        }
 
-        const result = pValue < alphaSignificance ? 'Reject the null hypothesis' : 'Fail to reject the null hypothesis';
+        const pA = versionAConversions / versionAVisitors;
+        const pB = versionBConversions / versionBVisitors;
+        const pPool = (versionAConversions + versionBConversions) / (versionAVisitors + versionBVisitors);
+
+        const zScore = Math.abs((pA - pB) / Math.sqrt(pPool * (1 - pPool) * (1 / versionAVisitors + 1 / versionBVisitors)));
+        const pValue = 2 * (1 - normalCdf(zScore));
+
+        let resultMessage = `<p><strong>P-Value:</strong> ${pValue.toFixed(4)}</p>`;
+        if (pValue < 0.05) {
+            resultMessage += "<p><strong>Result:</strong> Reject the null hypothesis (significant difference).</p>";
+        } else {
+            resultMessage += "<p><strong>Result:</strong> Fail to reject the null hypothesis (no significant difference).</p>";
+        }
 
         document.getElementById('significanceResult').style.display = 'block';
-        document.getElementById('significanceResult').innerHTML = `
-            <p><strong>P-value:</strong> ${pValue.toFixed(4)}</p>
-            <p><strong>Conclusion:</strong> ${result}</p>
-        `;
+        document.getElementById('significanceResult').innerHTML = resultMessage;
     }
 
-    function normalCdf(x) {
-        return (1.0 + Math.erf(x / Math.sqrt(2))) / 2.0;
+    function normalCdf(z) {
+        return (1.0 + Math.erf(z / Math.sqrt(2.0))) / 2.0;
     }
 </script>
-
 </body>
 </html>
