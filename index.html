@@ -69,10 +69,10 @@
         </select>
 
         <label for="baseline">Baseline Mean (Control):</label>
-        <input type="number" id="baseline" step="0.01" placeholder="e.g., 0.2" required>
+        <input type="number" id="baseline" step="1" placeholder="e.g., 1000" required>
 
-        <label for="impact">Minimum Detectable Impact:</label>
-        <input type="number" id="impact" step="0.01" placeholder="e.g., 0.05" required>
+        <label for="impact">Minimum Detectable Impact (Lift):</label>
+        <input type="number" id="impact" step="1" placeholder="e.g., 100" required>
 
         <label for="alpha">Significance Level (α):</label>
         <input type="number" id="alpha" step="0.01" value="0.05" required>
@@ -112,9 +112,9 @@
             sampleSizePerGroup = Math.pow((zAlpha + zBeta) * pooledStdDev / impact, 2);
         } else {
             // Discrete case: baseline and impact are counts
-            const p1 = baseline / 100;  // Convert baseline to a proportion
-            const p2 = (baseline + impact) / 100;  // Convert impact to proportion
-            sampleSizePerGroup = Math.ceil((zAlpha + zBeta) * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)) / (impact / 100));
+            const p1 = baseline / 10000;  // Convert baseline to a proportion of total
+            const p2 = (baseline + impact) / 10000;  // Convert impact to proportion of total
+            sampleSizePerGroup = Math.ceil((Math.pow((zAlpha + zBeta), 2) * (p1 * (1 - p1) + p2 * (1 - p2))) / Math.pow(impact / 10000, 2));
         }
         totalSampleSize = Math.ceil(2 * sampleSizePerGroup);
 
